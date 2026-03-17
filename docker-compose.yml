@@ -46,12 +46,12 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # ── Celery (worker + beat combined — saves Railway free-tier memory) ──────────
+  # ── Celery (worker + beat combined) ──────────────────────────────────────────
   celery:
     build: ./backend
     command: >
       celery -A app.workers.celery_app worker
-      --beat --loglevel=info --concurrency=2 -P gevent
+      --beat --loglevel=info --concurrency=2
     volumes:
       - ./backend:/app
     env_file: ./backend/.env

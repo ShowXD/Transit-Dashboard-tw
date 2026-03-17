@@ -31,7 +31,6 @@ celery_app.conf.update(
         },
     },
     worker_concurrency=2,
-    worker_pool="gevent",
     task_acks_late=True,
     task_reject_on_worker_lost=True,
 )
