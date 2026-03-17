@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Leaflet map container needs explicit height */
+.map-container {
+  @apply w-full h-96 rounded-lg overflow-hidden;
+}
