@@ -20,6 +20,15 @@ from app.services.upsert import (
 from app.workers.celery_app import celery_app
 
 
+def _run(self, coro, rate_limit_countdown: int) -> None:  # type: ignore[no-untyped-def]
+    try:
+        asyncio.run(coro)
+    except TDXRateLimitError as exc:
+        raise self.retry(exc=exc, countdown=rate_limit_countdown)
+    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+        raise self.retry(exc=exc)
+
+
 @celery_app.task(
     name="app.workers.tasks.sync_parking_master_data",
     bind=True,
@@ -32,12 +41,7 @@ def sync_parking_master_data(self) -> None:  # type: ignore[override]
     GET /v2/Parking/OffStreet/CarPark/City/Taichung
     GET /v2/Parking/OnStreet/Road/City/Taichung
     """
-    try:
-        asyncio.run(_sync_master())
-    except TDXRateLimitError as exc:
-        raise self.retry(exc=exc, countdown=300)
-    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
-        raise self.retry(exc=exc)
+    _run(self, _sync_master(), rate_limit_countdown=300)
 
 
 async def _sync_master() -> None:
@@ -65,12 +69,7 @@ def fetch_parking_availability(self) -> None:  # type: ignore[override]
 
     GET /v2/Parking/OffStreet/CarParkAvailability/City/Taichung
     """
-    try:
-        asyncio.run(_fetch_parking_avail())
-    except TDXRateLimitError as exc:
-        raise self.retry(exc=exc, countdown=60)
-    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
-        raise self.retry(exc=exc)
+    _run(self, _fetch_parking_avail(), rate_limit_countdown=60)
 
 
 async def _fetch_parking_avail() -> None:
@@ -95,12 +94,7 @@ def fetch_road_availability(self) -> None:  # type: ignore[override]
 
     GET /v2/Parking/OnStreet/RoadSectionAvailability/City/Taichung
     """
-    try:
-        asyncio.run(_fetch_road_avail())
-    except TDXRateLimitError as exc:
-        raise self.retry(exc=exc, countdown=120)
-    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
-        raise self.retry(exc=exc)
+    _run(self, _fetch_road_avail(), rate_limit_countdown=120)
 
 
 async def _fetch_road_avail() -> None:

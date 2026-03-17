@@ -1,6 +1,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import DeclarativeBase
 
 from app.models.parking_availability import ParkingAvailability
 from app.models.parking_lot import ParkingLot
@@ -22,7 +23,7 @@ async def upsert_parking_lots(
         [
             {
                 "external_id": lot.car_park_id,
-                "name": lot.name.zh_tw,
+                "name": lot.name,
                 "car_park_type": lot.car_park_type,
                 "address": lot.address,
                 "lat": lot.position.lat if lot.position else None,
@@ -56,7 +57,7 @@ async def upsert_parking_availability(
 ) -> None:
     if not items:
         return
-    id_map = await _lot_id_map(session, [i.car_park_id for i in items])
+    id_map = await _external_id_map(session, ParkingLot, [i.car_park_id for i in items])
     rows = [
         {"lot_id": id_map[i.car_park_id], "available_spaces": i.available_spaces}
         for i in items
@@ -116,7 +117,9 @@ async def upsert_road_availability(
 ) -> None:
     if not items:
         return
-    id_map = await _section_id_map(session, [i.road_section_id for i in items])
+    id_map = await _external_id_map(
+        session, RoadSection, [i.road_section_id for i in items]
+    )
     rows = [
         {"section_id": id_map[i.road_section_id], "available_spaces": i.available_spaces}
         for i in items
@@ -137,23 +140,14 @@ async def upsert_road_availability(
     await session.commit()
 
 
-async def _lot_id_map(
-    session: AsyncSession, external_ids: list[str]
+async def _external_id_map(
+    session: AsyncSession,
+    model: type[DeclarativeBase],
+    external_ids: list[str],
 ) -> dict[str, int]:
     result = await session.execute(
-        select(ParkingLot.id, ParkingLot.external_id).where(
-            ParkingLot.external_id.in_(external_ids)
-        )
-    )
-    return {row.external_id: row.id for row in result}
-
-
-async def _section_id_map(
-    session: AsyncSession, external_ids: list[str]
-) -> dict[str, int]:
-    result = await session.execute(
-        select(RoadSection.id, RoadSection.external_id).where(
-            RoadSection.external_id.in_(external_ids)
+        select(model.id, model.external_id).where(  # type: ignore[attr-defined]
+            model.external_id.in_(external_ids)  # type: ignore[attr-defined]
         )
     )
     return {row.external_id: row.id for row in result}

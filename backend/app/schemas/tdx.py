@@ -1,15 +1,15 @@
-"""Pydantic schemas for TDX parking API responses.
+from typing import Annotated
 
-Uses extra="ignore" + field aliases to map TDX's PascalCase JSON to Python.
-Only the fields we actually store are declared; everything else is discarded.
-"""
-
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
 
-class _LocalizedName(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    zh_tw: str = Field("", alias="Zh_tw")
+def _zh_tw(v: object) -> str:
+    if isinstance(v, dict):
+        return v.get("Zh_tw", "")
+    return str(v) if v else ""
+
+
+LocalizedStr = Annotated[str, BeforeValidator(_zh_tw)]
 
 
 class _Position(BaseModel):
@@ -24,7 +24,7 @@ class CarParkSchema(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     car_park_id: str = Field(alias="CarParkID")
-    name: _LocalizedName = Field(alias="CarParkName")
+    name: LocalizedStr = Field(alias="CarParkName")
     car_park_type: int | None = Field(None, alias="CarParkType")
     address: str | None = Field(None, alias="Address")
     position: _Position | None = Field(None, alias="CarParkPosition")

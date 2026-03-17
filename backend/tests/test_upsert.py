@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import AsyncSessionLocal
 from app.models.parking_availability import ParkingAvailability
 from app.models.parking_lot import ParkingLot
-from app.schemas.tdx import CarParkAvailabilitySchema, CarParkSchema, _LocalizedName, _Position
+from app.schemas.tdx import CarParkAvailabilitySchema, CarParkSchema
 from app.services.upsert import upsert_parking_availability, upsert_parking_lots
 
 

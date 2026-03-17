@@ -18,14 +18,14 @@ async def get_token() -> str:
     cached = await _get_redis().get(_TOKEN_KEY)
     if cached:
         return cached
-    return await _refresh_token()
+    return await _fetch_token()
 
 
 async def invalidate_token() -> None:
     await _get_redis().delete(_TOKEN_KEY)
 
 
-async def _refresh_token() -> str:
+async def _fetch_token() -> str:
     async with httpx.AsyncClient() as client:
         resp = await client.post(
             settings.tdx_auth_url,
