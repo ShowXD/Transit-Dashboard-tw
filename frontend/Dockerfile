@@ -1,12 +1,7 @@
-# Stage 1: build
-FROM node:20-alpine AS build
+FROM node:20-alpine AS dev
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+COPY package.json ./
+RUN npm install
 COPY . .
-RUN npm run build
-
-# Stage 2: serve with nginx
-FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE 80
+EXPOSE 5173
+CMD ["npm", "run", "dev"]
