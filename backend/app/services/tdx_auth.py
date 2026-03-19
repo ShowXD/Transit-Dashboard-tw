@@ -1,16 +1,24 @@
+import asyncio
+
 import httpx
 import redis.asyncio as aioredis
 
 from app.config import settings
 
 _redis: aioredis.Redis | None = None
+_redis_loop: asyncio.AbstractEventLoop | None = None
 _TOKEN_KEY = "tdx:access_token"
 
 
 def _get_redis() -> aioredis.Redis:
-    global _redis
-    if _redis is None:
+    global _redis, _redis_loop
+    try:
+        current_loop = asyncio.get_event_loop()
+    except RuntimeError:
+        current_loop = None
+    if _redis is None or _redis_loop is not current_loop:
         _redis = aioredis.from_url(settings.redis_url, decode_responses=True)
+        _redis_loop = current_loop
     return _redis
 
 

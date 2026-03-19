@@ -29,7 +29,7 @@ export interface PaginatedResponse<T> {
   limit: number
 }
 
-const BASE = '/api/v1'
+const BASE = 'http://localhost:8000/api/v1'
 
 export async function fetchLots(
   lat?: number,
